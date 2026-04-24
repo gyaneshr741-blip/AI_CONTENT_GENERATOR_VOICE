@@ -1,7 +1,6 @@
 import streamlit as st
 from groq import Groq
 from streamlit_mic_recorder import mic_recorder
-import speech_recognition as sr
 import tempfile
 
 # ------------------ CONFIG ------------------
@@ -10,21 +9,25 @@ st.title("🎤 Voice AI Product Assistant")
 
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
-# ------------------ FUNCTION ------------------
+# ------------------ SPEECH TO TEXT (WHISPER) ------------------
 def speech_to_text(audio_bytes):
-    recognizer = sr.Recognizer()
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
-        f.write(audio_bytes)
-        audio_path = f.name
-
-    with sr.AudioFile(audio_path) as source:
-        audio = recognizer.record(source)
-
     try:
-        text = recognizer.recognize_google(audio)
-        return text
-    except:
+        # Save audio temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
+            f.write(audio_bytes)
+            audio_path = f.name
+
+        # Use Groq Whisper model
+        with open(audio_path, "rb") as file:
+            transcription = client.audio.transcriptions.create(
+                file=file,
+                model="whisper-large-v3"   # ✅ robust & accurate
+            )
+
+        return transcription.text
+
+    except Exception as e:
+        st.error(f"Transcription error: {e}")
         return ""
 
 # ------------------ INPUT MODE ------------------
@@ -43,7 +46,7 @@ else:
     audio = mic_recorder(
         start_prompt="Start Recording",
         stop_prompt="Stop Recording",
-        key="voice_input_unique"   # ✅ FIXED ERROR
+        key="voice_input_unique"
     )
 
     if audio:
@@ -61,7 +64,7 @@ if st.button("🚀 Get Information"):
         - Key features
         - Advantages
         - Price range (if possible)
-        - Simple explanation
+        - Simple explanation for beginners
         """
 
         response = client.chat.completions.create(
@@ -74,15 +77,7 @@ if st.button("🚀 Get Information"):
         st.write(result)
 
     else:
-        st.warning("⚠️ Please enter or speak a product")
+        st.warning("⚠️ Please enter or speak something")
 
 # ------------------ DOWNLOAD ------------------
-if "output" in st.session_state:
-    content = st.text_area("Generated Information", st.session_state["output"], height=300)
-
-    st.download_button(
-        label="⬇️ Download as TXT",
-        data=content,
-        file_name="product_info.txt",
-        mime="text/plain"
-    )
+if
