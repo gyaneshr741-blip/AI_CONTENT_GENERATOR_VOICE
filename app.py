@@ -52,19 +52,15 @@ else:
     if audio:
         query = speech_to_text(audio["bytes"])
         st.success(f"You said: {query}")
-
-# ------------------ AI RESPONSE ------------------
-if st.button("🚀 Get Information"):
+        if st.button("🚀 Get Information"):
     if query:
         prompt = f"""
         User asked: {query}
 
-        Provide a clear explanation including:
-        - What it is
-        - Key features
+        Provide explanation with:
+        - Features
         - Advantages
-        - Price range (if possible)
-        - Simple explanation for beginners
+        - Price
         """
 
         response = client.chat.completions.create(
@@ -73,11 +69,7 @@ if st.button("🚀 Get Information"):
         )
 
         result = response.choices[0].message.content
-        st.session_state["output"] = result
         st.write(result)
 
     else:
-        st.warning("⚠️ Please enter or speak something")
-
-# ------------------ DOWNLOAD ------------------
-if
+        st.warning("Please enter something")
